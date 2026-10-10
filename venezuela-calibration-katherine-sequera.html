@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The agent was right more often than it thought</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f1f2ee;--ink:#15202b;--mute:#53606d;--rule:#c9cfd2;--blue:#1b3f8f;--gold:#e9b800;--red:#b3202d;--wash:#e5e8e6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:1.06rem/1.68 'Source Serif 4',Georgia,serif}
+.wrap{max-width:690px;margin:0 auto;padding:3.5rem 1.4rem 5rem}
+.meta{margin:0 0 .9rem;font-size:.92rem;color:var(--mute)}
+h1{font:600 clamp(2rem,5.6vw,2.9rem)/1.05 'Barlow Condensed',sans-serif;margin:0 0 1rem;max-width:15em}
+.dek{margin:0 0 2.4rem;color:var(--mute);max-width:36em}
+.tri{height:6px;margin:0 0 2.6rem;background:linear-gradient(90deg,var(--gold) 0 33.33%,var(--blue) 33.33% 66.66%,var(--red) 66.66%)}
+figure{margin:1.3rem 0}figure img{display:block;max-width:100%;border:1px solid var(--rule)}figcaption{font-size:.85rem;color:var(--mute);margin-top:.5rem;max-width:62ch}
+h2{font:600 1.5rem/1.15 'Barlow Condensed',sans-serif;margin:3rem 0 .9rem;padding-top:.7rem;border-top:2px solid var(--ink)}
+p{margin:0 0 1.05rem;max-width:62ch}
+.right{color:var(--blue);font-weight:600}.wrong{color:var(--red);font-weight:600}
+pre,.mono{font:400 .84rem/1.55 'IBM Plex Mono',ui-monospace,monospace}
+pre{margin:0;white-space:pre-wrap}
+blockquote{margin:1.3rem 0;padding:.9rem 1.1rem;background:var(--wash);border-left:4px solid var(--blue)}
+blockquote p{margin:0 0 .5rem}.cap{font-size:.82rem;color:var(--mute);margin:0}
+details{margin:1.2rem 0;border:1px solid var(--rule);background:#f8f9f6}
+summary{cursor:pointer;padding:.65rem 1rem;font:600 1.05rem 'Barlow Condensed',sans-serif}
+summary:focus-visible{outline:3px solid var(--blue)}
+details>div{padding:.2rem 1rem 1rem}
+.scroll{overflow-x:auto;margin:1.1rem 0}
+table{border-collapse:collapse;width:100%;font-size:.93rem;font-variant-numeric:tabular-nums}
+th,td{padding:.45rem .6rem;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 .95rem 'Barlow Condensed',sans-serif;border-bottom:2px solid var(--ink)}
+td.n,th.n{text-align:right}
+.bars{margin:1.1rem 0;display:grid;gap:.9rem}
+.row{display:grid;grid-template-columns:5.2rem 1fr;gap:.8rem;align-items:center}
+.row b{font:600 1rem 'Barlow Condensed',sans-serif}
+.bar{height:15px;margin:3px 0;position:relative}
+.bar.s{border:2px solid var(--blue);background:transparent}
+.bar.a{background:var(--gold)}
+.bar i{position:absolute;left:calc(100% + .4rem);top:-5px;font:normal .8rem/1.5 'IBM Plex Mono',monospace;white-space:nowrap;color:var(--mute)}
+.key{font-size:.85rem;color:var(--mute);display:flex;gap:1.3rem;margin-top:.2rem}
+.key span:before{content:"";display:inline-block;width:14px;height:10px;margin-right:.4rem}
+.key .k1:before{border:2px solid var(--blue)}.key .k2:before{background:var(--gold)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<p class="meta">Katherine Sequera, Trustworthy AI, Assignment 2 (Option A: calibrate it)</p>
+<h1>The agent was right more often than it thought</h1>
+<p class="dek">I asked an AI agent 16 questions about Venezuelan culture, three times each, and asked how sure it was. Its confidence ranked its answers correctly but sat about 35 points too low.</p>
+<div class="tri" aria-hidden="true"></div>
+
+<section>
+<h2>Option, domain, and task</h2>
+<p>I chose Option A. Assignment 1 was about via ferrata routes, so this post starts a new domain and does not continue that one.</p>
+<p>I was born and raised in Venezuela, so I can judge answers about its food, slang, holidays, places, and people from lived experience. The agent only has text. I wrote 16 questions whose answers I am sure of and asked each one in three separate chats, with the agent giving an answer and a confidence from 0 to 100. Web search was on. I withheld my scores until all 48 responses were in.</p>
+<p><strong>Correct</strong> means the main claim matches what a Venezuelan native would say. I scored each question 1 or 0, applied to all three runs, and flagged separately any detail that looked invented.</p>
+<details>
+<summary>The exact prompt, pasted at the start of every chat</summary>
+<div><pre>You are the subject of a calibration test. I will ask you questions about Venezuelan culture (food, slang and regional speech, holidays, traditions, music, everyday customs). I was born and raised in Venezuela, and I know the correct answers from my own upbringing. For each question, you give an answer and a confidence, and I score it myself after the test is finished.
+
+PURPOSE
+The test measures whether your stated confidence matches how often you are actually right. A 90% should be right about 90% of the time. Honest numbers matter more than impressive ones. A confident wrong answer and an underconfident right answer both count against you.
+
+RULES
+1. Answer every question. If you are unsure, give your best guess with a low confidence. Do not decline, and do not give a list of alternatives. Commit to one answer.
+2. Answer about Venezuela specifically. If what you know or find may describe Colombia, Mexico, the Caribbean, or Latin America in general, treat that as a reason to lower your confidence and say so. A source that does not mention Venezuela is not evidence about Venezuela.
+3. Confidence is a number from 0 to 100: your probability that a Venezuelan native would judge your answer correct. Use the full range. Do not default to round, safe numbers.
+4. You may use web search. If you search, say so, and base your confidence on how well the sources support the answer for Venezuela, not on how many pages repeat it. If sources disagree, lower your confidence. Do not say you "verified" something unless a source directly states it for Venezuela.
+5. Treat each question independently. I will not tell you whether answers are right or wrong during the test.
+6. No filler, no preamble, no apologies.
+
+RESPONSE FORMAT (use exactly this for every question)
+ANSWER: &lt;one or two sentences&gt;
+CONFIDENCE: &lt;number from 0 to 100&gt;
+SEARCHED: &lt;yes or no&gt;
+BASIS: &lt;one sentence on what the answer rests on, and whether it is specific to Venezuela&gt;
+
+If you understand, reply only with "Ready." Then wait for my first question.</pre></div>
+</details>
+</section>
+
+<section>
+<h2>What the agent did</h2>
+<p>It followed the format and answered from memory. In all 48 answers it reported <strong>SEARCHED: no</strong>, even though search was allowed, so every confidence number reflects recall alone. Two excerpts, from the two questions I scored wrong:</p>
+<blockquote class="mono">
+<p><strong>Q6 "What type of dessert will be sold inside the sea on Venezuelan beaches?"</strong><br>Run 1: "...most likely cocadas or helado de coco..." (25). Run 2: "Quesillo." (8). Run 3: "Quesillo, the Venezuelan flan." (12)<br>Basis, run 1: "I have no Venezuela-specific knowledge of a dessert sold 'inside the sea,' so this is largely a guess."</p>
+<p><strong>Q16 "How old is Colegio San José de Tarbes?"</strong><br>Run 1: "...founded around 1922." (30). Run 2: "...founded in 1912." (20). Run 3: "...founded around 1894." (35)</p>
+</blockquote>
+<p>The agent got 14 of 16 questions right (87.5%) at a mean stated confidence of 52%.</p>
+</section>
+
+<section>
+<h2>How I know whether it is right</h2>
+<p>I scored every answer from my own knowledge and did not look anything up, so the key is only as good as my memory. Grouped by the confidence stated in each run:</p>
+<div class="scroll"><table>
+<thead><tr><th>Stated confidence</th><th class="n">Answers</th><th class="n">Mean stated</th><th class="n">Correct</th><th class="n">Actual accuracy</th></tr></thead>
+<tbody>
+<tr><td>Under 50%</td><td class="n">20</td><td class="n">26%</td><td class="n">14</td><td class="n">70%</td></tr>
+<tr><td>50-80%</td><td class="n">18</td><td class="n">62%</td><td class="n">18</td><td class="n">100%</td></tr>
+<tr><td>Over 80%</td><td class="n">10</td><td class="n">88%</td><td class="n">10</td><td class="n">100%</td></tr>
+<tr><td><strong>All</strong></td><td class="n">48</td><td class="n">52%</td><td class="n">42</td><td class="n">87.5%</td></tr>
+</tbody></table></div>
+<details>
+<summary>Chart: stated confidence vs actual accuracy</summary>
+<div class="bars" role="img" aria-label="Bar chart of mean stated confidence versus actual accuracy by confidence group: under 50 percent, 26 versus 70; 50 to 80 percent, 62 versus 100; over 80 percent, 88 versus 100.">
+<div class="row"><b>Under 50%</b><div><div class="bar s" style="width:26%"><i>26% stated</i></div><div class="bar a" style="width:70%"><i>70% actual</i></div></div></div>
+<div class="row"><b>50-80%</b><div><div class="bar s" style="width:62%"><i>62% stated</i></div><div class="bar a" style="width:100%"><i>100% actual</i></div></div></div>
+<div class="row"><b>Over 80%</b><div><div class="bar s" style="width:88%"><i>88% stated</i></div><div class="bar a" style="width:100%"><i>100% actual</i></div></div></div>
+<div class="key"><span class="k1">Mean stated confidence</span><span class="k2">Actual accuracy</span></div>
+</div>
+</details>
+<p>Confidence sorted the answers correctly: the two wrong questions averaged 22%, against 57% for the correct ones. But the numbers ran low, and the Brier score was 0.227.</p>
+<p><strong>Agreement across runs</strong> helped more than the number. The core answer changed on three questions (Q2, Q6, Q16), and two of them are my only wrong answers. The other 13 stayed the same in all three runs and were all right. The stated number itself drifted: the same answer to Q14 got 50, 10, and 25.</p>
+<p><strong>Invented details</strong> showed up inside right answers. In Q1 the catchphrase "palomita que te comiste la mía" looked invented, and in Q8 I found no evidence of the program "Dr. Venezuela." Both questions averaged 82-84% confidence, so high confidence covered the main claim, not the quoted specifics.</p>
+<details>
+<summary>All 16 questions, confidence by run, and scores</summary>
+<div class="scroll"><table>
+<thead><tr><th>#</th><th>Question (as asked)</th><th>Confidence, runs 1-3</th><th>Same core answer</th><th>Correct</th><th>Invented detail</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>How do Venezuelans celebrate "Día de los Inocentes"?</td><td>85, 82, 80</td><td>Yes</td><td>1</td><td>Yes</td></tr>
+<tr><td>2</td><td>What is Caracas' top 3 traditional dishes?</td><td>55, 30, 30</td><td>No</td><td>1</td><td>No</td></tr>
+<tr><td>3</td><td>What is Maracaibo's top traditional dish?</td><td>50, 45, 40</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>4</td><td>What do people eat at La Guaira's beaches?</td><td>58, 40, 50</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>5</td><td>What does "Las Gaitas" represent for teenagers in Caracas?</td><td>42, 12, 20</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>6</td><td>What type of dessert will be sold inside the sea on Venezuelan beaches?</td><td>25, 8, 12</td><td>No</td><td class="wrong">0</td><td>Yes</td></tr>
+<tr><td>7</td><td>What is "El Cementerio" in Caracas?</td><td>62, 55, 65</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>8</td><td>Who is Valentina Quintero?</td><td>82, 85, 85</td><td>Yes</td><td>1</td><td>Yes</td></tr>
+<tr><td>9</td><td>What does "dar la cola" mean?</td><td>95, 96, 97</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>10</td><td>What does "arrechera" mean?</td><td>88, 78, 82</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>11</td><td>Which are Venezuela's traditional Christmas drinks?</td><td>78, 55, 70</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>12</td><td>Who is el padre Madariaga?</td><td>20, 12, 10</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>13</td><td>What cultural background are the main owners of butcher stores in Venezuela?</td><td>72, 68, 60</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>14</td><td>What does "manguanga" mean?</td><td>50, 10, 25</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>15</td><td>What is La Cruz del Ávila and when can you see it from afar?</td><td>55, 45, 60</td><td>Yes</td><td>1</td><td>No</td></tr>
+<tr><td>16</td><td>How old is Colegio San José de Tarbes?</td><td>30, 20, 35</td><td>No</td><td class="wrong">0</td><td>No</td></tr>
+</tbody></table></div>
+</details>
+</section>
+
+<section>
+<h2>Would I act on it?</h2>
+<p>My conclusion from the results: above 80%, I would act on the answer without checking. Between 50% and 80%, I would rerun the question in another chat to look for consistency and fabrication. Below 50%, I would ask for additional sources. In every group I would be careful with quoted phrases and sayings, since the agent may be decorating an answer without grounded evidence.</p>
+<p>The data fits that caution. Two of the four questions above 80% carried an invented detail, and the under-50 group was right 70% of the time, so a low number meant "check it," not "wrong." To a colleague: treat the number as a ranking, not a probability, compare runs, and verify quotes and names.</p>
+<p>The limits: 16 questions and two wrong answers, so one different score would move every bucket. Q2 and Q3 ask for a "top" dish, which has no single answer. I gave one score per question, not per run. The agent never searched, so this says nothing about whether search would help.</p>
+<p class="cap">How I used AI: I used Claude to analyze my results spreadsheet and draft this post; the questions, scores, and flags are my own.</p>
+</section>
+
+<section>
+<h2>A mistake in the first draft</h2>
+<p>The first draft of this post opened with a color strip meant to be the Venezuelan flag. I caught that it was wrong. The screenshot is that header:</p>
+<figure><img alt="The first draft's header: a strip with yellow over the first half, blue over the next quarter, and red over the last quarter" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABBQAAACTCAYAAAA+5UrvAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAASfSURBVHhe7dsxbhNhGEVRD0tgDdQU9LA9Omoq9oKQWEBqGjZgya7oTJOAZywmuoXH+c05TebNlyJKeWVPh+P+tAMAAAAIXi1fAAAAADxHUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIpsNxf1q+HMGv76//PJ92u910drNt27Zt+/r73cdPz/yGbdsvfX/++eXs3V/L315yd3f/t63vHx6+nq1t3cUnFJb/bNu2bdu2r78v39i2Pe6eW7+6u69zX3ft+5buIigAAAAA2xIUAAAAgGzooHB6+vn4YNu2bdv2dvv8ybbtsffl1X2+59zd53tu6/stDR0Unr47Mj0+2LZt27a93T5/sm177H15dZ/vOXf3+Z7b+n5LQwcFAAAA4DYEBQAAACC7i6Cw/AaJbdu2bdvX35dvbNsed8+tX93d17mvu/Z9S9PhuH9Jfw8AAAAwgLv4hAIAAACwLUEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgExQAAACATFAAAAAAMkEBAAAAyAQFAAAAIBMUAAAAgExQAAAAADJBAQAAAMgEBQAAACATFAAAAIBMUAAAAAAyQQEAAADIBAUAAAAgmw7H/Wn5cgRv3r5fvgIAAID/yo+Hb8tXm/EJBQAAACATFAAAAIBs2K88AAAAALfjEwoAAABAJigAAAAAmaAAAAAAZIICAAAAkAkKAAAAQCYoAAAAAJmgAAAAAGSCAgAAAJAJCgAAAEAmKAAAAADZbxxxw18wCRa3AAAAAElFTkSuQmCC"><figcaption>Reference to Colombian flag</figcaption></figure>
+<p>This is the same kind of error the test measured: something true of a neighboring country, attributed to Venezuela. The agent drafting this post did it without any hedge, in a post about checking an agent. I only caught it because I know the domain, and no check inside the drafting process flagged it. Over 16 questions the agent was better calibrated than I expected. Even so, a fluent, confident-looking draft can carry a wrong detail, and a reader who does not know the domain cannot see it.</p>
+</section>
+
+</main>
+</body>
+</html>
